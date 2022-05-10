@@ -6,6 +6,8 @@ cmd2="/project/vmagent-prod -promscrape.config=./prometheus.yml -remoteWrite.tmp
 $cmd1 &
 # Start the second process
 
+# Sleep for 60 seconds to prevent a file lock startup condition when this service is restarted by swarm
+sleep 60
 $cmd2 &
 # Wait for any process to exit
 wait -n
