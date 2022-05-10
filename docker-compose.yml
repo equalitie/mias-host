@@ -2,11 +2,9 @@ version: '3.8'
 
 networks:
   monitoring:
-    driver: overlay
-    driver_opts:
-      encrypted: ""
+    external:
+      name: "host"
     attachable: true
-    name: monitoring
 
 volumes:
   vmagent_data:
@@ -31,6 +29,7 @@ services:
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/etc/grafana/provisioning/dashboards.d/home.json"
       GF_SERVER_DOMAIN: "${MAIS_DOMAIN}"
       GF_SERVER_ROOT_URL: "https://${MIAS_DOMAIN}"
+      MIAS_DOMAIN: ${MIAS_DOMAIN}
     secrets:
       - gf_admin_password
     configs:
@@ -82,9 +81,6 @@ services:
   # caddyserver is a reverse proxy featuring automatic letsencrypt certificates.  It is used to expose the Grafana dashboard to the Internet.
   caddy:
     image: caddy:latest
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -110,7 +106,7 @@ services:
   #
   # vmagent is a bundled multi-service image that scrapes metrics exported from node-exporter and then pushes them to the remote victory-metrics gateway node
   vmagent:
-    image: keith/mias-agent:v0.0.2
+    image: keith/mias-agent-host:v0.0.1
     volumes:
       - vmagent_data:/opt/vmagent/storage
       - /proc:/host/proc:ro
@@ -119,6 +115,7 @@ services:
     environment:
       # We replace the "job" value to the friendlier node hostname so that it appears as such in the Grafana dashboard
       VMAGENT_JOB: "{{.Node.Hostname}}"
+      MIAS_DOMAIN: ${MIAS_DOMAIN}
     depends_on:
       - vmgateway
     networks:
@@ -141,12 +138,15 @@ configs:
     file: ./vmgateway/configs/prometheus.yml.tmpl
     external: false
   gfautomaticdashboard:
+    template_driver: golang
     file: ./vmgateway/configs/provisioning/dashboards/automatic.yml
     external: false
   gfhomedashboard:
+    template_driver: golang
     file: ./vmgateway/configs/provisioning/dashboards.d/home.json
     external: false
   gfdatasource:
+    template_driver: golang
     file: ./vmgateway/configs/provisioning/datasources/automatic.yml
     external: false
   caddy:
