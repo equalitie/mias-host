@@ -39,6 +39,11 @@ services:
         target: /etc/grafana/provisioning/dashboards.d/home.json
       - source: gfdatasource
         target: /etc/grafana/provisioning/datasources/automatic.yml
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
     depends_on:
       - caddy
     deploy:
@@ -68,6 +73,11 @@ services:
     configs:
       - source: vmgateway
         target: /prometheus.yml
+    ports:
+      - target: 8428
+        published: 8428
+        protocol: tcp
+        mode: host
     deploy:
       mode: replicated
       replicas: 1
@@ -88,6 +98,15 @@ services:
       - monitoring
     environment:
       MIAS_DOMAIN: ${MIAS_DOMAIN}
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
     configs:
       - source: caddy
         target: /etc/caddy/Caddyfile
